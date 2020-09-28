@@ -16,9 +16,9 @@
 
         public override string Name => "Discord";
 
-        public override string Author => "PsychoTea & DylanSMR";
+        public override string Author => "PsychoTea & DylanSMR & Tricky";
 
-        public override VersionNumber Version => new VersionNumber(1, 0, 1);
+        public override VersionNumber Version => new VersionNumber(1, 0, 6);
 
         public override void OnModLoad()
         {
@@ -36,7 +36,7 @@
                 Discord.CloseClient(client);
             }
 
-            Interface.Oxide.LogInfo("[Discord Ext] Disconnected all clients - server shutdown.");
+            Interface.Oxide.LogInfo("[Discord Extension] Disconnected all clients - server shutdown.");
         }
     }
 }

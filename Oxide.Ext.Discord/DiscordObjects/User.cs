@@ -19,9 +19,13 @@
 
         public bool? mfa_enabled { get; set; }
 
+        public string locale { get; set; }
+
         public bool? verified { get; set; }
 
         public string email { get; set; }
+
+        public UserPremiumType? premium_type { get; set; }
 
         public static void GetCurrentUser(DiscordClient client, Action<User> callback = null)
         {
@@ -63,6 +67,16 @@
             client.REST.DoRequest($"/users/@me/channels", RequestMethod.GET, null, callback);
         }
 
+        public void CreateDM(DiscordClient client, Action<Channel> callback = null)
+        {
+            var jsonObj = new Dictionary<string, string>()
+            {
+                { "recipient_id", this.id }
+            };
+
+            client.REST.DoRequest("/users/@me/channels", RequestMethod.POST, jsonObj, callback);
+        }
+
         public void CreateGroupDM(DiscordClient client, string[] accessTokens, List<Nick> nicks, Action<Channel> callback = null)
         {
             var nickDict = nicks.ToDictionary(k => k.id, v => v.nick);
@@ -79,16 +93,6 @@
         public void GetUserConnections(DiscordClient client, Action<List<Connection>> callback = null)
         {
             client.REST.DoRequest($"/users/@me/connections", RequestMethod.GET, null, callback);
-        }
-
-        public void CreateDM(DiscordClient client, Action<Channel> callback = null)
-        {
-            var jsonObj = new Dictionary<string, string>()
-            {
-                { "recipient_id", this.id }
-            };
-
-            client.REST.DoRequest("/users/@me/channels", RequestMethod.POST, jsonObj, callback);
         }
 
         public void GroupDMAddRecipient(DiscordClient client, Channel channel, string accessToken, Action callback = null) => GroupDMAddRecipient(client, channel.id, accessToken, this.username, callback);
@@ -109,6 +113,28 @@
         public void GroupDMRemoveRecipient(DiscordClient client, string channelID, Action callback = null)
         {
             client.REST.DoRequest($"/channels/{channelID}/recipients/{id}", RequestMethod.DELETE, null, callback);
+        }
+
+        public void Update(User updateduser)
+        {
+            if (updateduser.avatar != null)
+                this.avatar = updateduser.avatar;
+            if (updateduser.bot != null)
+                this.bot = updateduser.bot;
+            if (updateduser.discriminator != null)
+                this.discriminator = updateduser.discriminator;
+            if (updateduser.email != null)
+                this.email = updateduser.email;
+            if (updateduser.locale != null)
+                this.locale = updateduser.locale;
+            if (updateduser.mfa_enabled != null)
+                this.mfa_enabled = updateduser.mfa_enabled;
+            if (updateduser.premium_type != null)
+                this.premium_type = updateduser.premium_type;
+            if (updateduser.username != null)
+                this.username = updateduser.username;
+            if (updateduser.verified != null)
+                this.verified = updateduser.verified;
         }
     }
 }

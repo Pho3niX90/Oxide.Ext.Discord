@@ -15,7 +15,13 @@
 
         public string splash { get; set; }
 
+        public string discovery_splash { get; set; }
+
+        public bool owner { get; set; }
+
         public string owner_id { get; set; }
+
+        public int? permissions { get; set; }
 
         public string region { get; set; }
 
@@ -27,7 +33,7 @@
 
         public string embed_channel_id { get; set; }
 
-        public int? verification_level { get; set; }
+        public GuildVerificationLevel? verification_level { get; set; }
 
         public int? default_message_notifications { get; set; }
 
@@ -39,13 +45,17 @@
 
         public List<string> features { get; set; }
 
-        public int? mfa_level { get; set; }
+        public GuildMFALevel? mfa_level { get; set; }
 
         public string application_id { get; set; }
 
         public bool? widget_enabled { get; set; }
 
         public string widget_channel_id { get; set; }
+
+        public string system_channel_id { get; set; }
+
+        public string rules_channel_id { get; set; }
 
         public string joined_at { get; set; }
 
@@ -63,7 +73,25 @@
 
         public List<Presence> presences { get; set; }
 
-        public static void CreateGuild(DiscordClient client, string name, string region, string icon, int? verificationLevel, int? defaultMessageNotifications, List<Role> roles, List<Channel> channels, Action<Guild> callback = null)
+        public int? max_presences { get; set; }
+
+        public int? max_members { get; set; }
+
+        public string vanity_url_code { get; set; }
+
+        public string description { get; set; }
+
+        public string banner { get; set; }
+
+        public GuildPremiumTier? premium_tier { get; set; }
+
+        public int? premium_subscription_count { get; set; }
+
+        public string preferred_locale { get; set; }
+
+        public string public_updates_channel_id { get; set; }
+
+        public static void CreateGuild(DiscordClient client, string name, string region, string icon, GuildVerificationLevel? verificationLevel, int? defaultMessageNotifications, List<Role> roles, List<Channel> channels, Action<Guild> callback = null)
         {
             var jsonObj = new Dictionary<string, object>()
             {
@@ -99,9 +127,9 @@
             client.REST.DoRequest($"/guilds/{id}/channels", RequestMethod.GET, null, callback);
         }
 
-        public void CreateGuildChannel(DiscordClient client, Channel channel, Action<Channel> callback = null) => CreateGuildChannel(client, channel.name, channel.type, channel.bitrate, channel.user_limit, channel.permission_overwrites, callback);
+        public void CreateGuildChannel(DiscordClient client, Channel channel, Action<Channel> callback = null) => CreateGuildChannel(client, channel.name, channel.type, channel.bitrate, channel.user_limit, channel.permission_overwrites, channel.parent_id, callback);
 
-        public void CreateGuildChannel(DiscordClient client, string name, ChannelType? type, int? bitrate, int? userLimit, List<Overwrite> permissionOverwrites, Action<Channel> callback = null)
+        public void CreateGuildChannel(DiscordClient client, string name, ChannelType? type, int? bitrate, int? userLimit, List<Overwrite> permissionOverwrites, string parent_id, Action<Channel> callback = null)
         {
             var jsonObj = new Dictionary<string, object>()
             {
@@ -109,7 +137,8 @@
                 { "type", type },
                 { "bitrate", bitrate },
                 { "user_limit", userLimit },
-                { "permission_overwrites", permissionOverwrites }
+                { "permission_overwrites", permissionOverwrites },
+                { "parent_id", parent_id }
             };
 
             client.REST.DoRequest($"/guilds/{id}/channels", RequestMethod.POST, jsonObj, callback);
@@ -157,6 +186,16 @@
                 { "mute", mute },
                 { "deaf", deaf },
                 { "channel_id", channelId }
+            };
+
+            client.REST.DoRequest($"/guilds/{id}/members/{userID}", RequestMethod.PATCH, jsonObj, callback);
+        }
+
+        public void ModifyUsersNick(DiscordClient client, string userID, string nick, Action callback = null)
+        {
+            var jsonObj = new Dictionary<string, object>()
+            {
+                { "nick", nick }
             };
 
             client.REST.DoRequest($"/guilds/{id}/members/{userID}", RequestMethod.PATCH, jsonObj, callback);
@@ -334,6 +373,85 @@
         public void ModifyGuildEmbed(DiscordClient client, GuildEmbed guildEmbed, Action<GuildEmbed> callback = null)
         {
             client.REST.DoRequest($"/guilds/{id}/embed", RequestMethod.PATCH, guildEmbed, callback);
+        }
+
+        public void GetGuildVanityURL(DiscordClient client, Action<Invite> callback = null)
+        {
+            client.REST.DoRequest($"/guilds/{id}/vanity-url", RequestMethod.GET, null, callback);
+        }
+
+        public void Update(Guild UpdatedGuild)
+        {
+            if (UpdatedGuild.name != null)
+                this.name = UpdatedGuild.name;
+            if (UpdatedGuild.icon != null)
+                this.icon = UpdatedGuild.icon;
+            if (UpdatedGuild.splash != null)
+                this.splash = UpdatedGuild.splash;
+            if (UpdatedGuild.owner_id != null)
+                this.owner_id = UpdatedGuild.owner_id;
+            if (UpdatedGuild.region != null)
+                this.region = UpdatedGuild.region;
+            if (UpdatedGuild.afk_channel_id != null)
+                this.afk_channel_id = UpdatedGuild.afk_channel_id;
+            if (UpdatedGuild.afk_timeout != null)
+                this.afk_timeout = UpdatedGuild.afk_timeout;
+            if (UpdatedGuild.embed_enabled != null)
+                this.embed_enabled = UpdatedGuild.embed_enabled;
+            if (UpdatedGuild.embed_channel_id != null)
+                this.embed_channel_id = UpdatedGuild.embed_channel_id;
+            if (UpdatedGuild.verification_level != null)
+                this.verification_level = UpdatedGuild.verification_level;
+            if (UpdatedGuild.default_message_notifications != null)
+                this.default_message_notifications = UpdatedGuild.default_message_notifications;
+            if (UpdatedGuild.explicit_content_filter != null)
+                this.explicit_content_filter = UpdatedGuild.explicit_content_filter;
+            if (UpdatedGuild.roles != null)
+                this.roles = UpdatedGuild.roles;
+            if (UpdatedGuild.emojis != null)
+                this.emojis = UpdatedGuild.emojis;
+            if (UpdatedGuild.features != null)
+                this.features = UpdatedGuild.features;
+            if (UpdatedGuild.mfa_level != null)
+                this.mfa_level = UpdatedGuild.mfa_level;
+            if (UpdatedGuild.application_id != null)
+                this.application_id = UpdatedGuild.application_id;
+            if (UpdatedGuild.widget_enabled != null)
+                this.widget_enabled = UpdatedGuild.widget_enabled;
+            if (UpdatedGuild.widget_channel_id != null)
+                this.widget_channel_id = UpdatedGuild.widget_channel_id;
+            if (UpdatedGuild.system_channel_id != null)
+                this.system_channel_id = UpdatedGuild.system_channel_id;
+            if (UpdatedGuild.joined_at != null)
+                this.joined_at = UpdatedGuild.joined_at;
+            if (UpdatedGuild.large != null)
+                this.large = UpdatedGuild.large;
+            if (UpdatedGuild.unavailable != null)
+                this.unavailable = UpdatedGuild.unavailable;
+            if (UpdatedGuild.member_count != null)
+                this.member_count = UpdatedGuild.member_count;
+            if (UpdatedGuild.voice_states != null)
+                this.voice_states = UpdatedGuild.voice_states;
+            if (UpdatedGuild.members != null)
+                this.members = UpdatedGuild.members;
+            if (UpdatedGuild.channels != null)
+                this.channels = UpdatedGuild.channels;
+            if (UpdatedGuild.presences != null)
+                this.presences = UpdatedGuild.presences;
+            if (UpdatedGuild.max_presences != null)
+                this.max_presences = UpdatedGuild.max_presences;
+            if (UpdatedGuild.max_members != null)
+                this.max_members = UpdatedGuild.max_members;
+            if (UpdatedGuild.vanity_url_code != null)
+                this.vanity_url_code = UpdatedGuild.vanity_url_code;
+            if (UpdatedGuild.description != null)
+                this.description = UpdatedGuild.description;
+            if (UpdatedGuild.banner != null)
+                this.banner = UpdatedGuild.banner;
+            if (UpdatedGuild.premium_tier != null)
+                this.premium_tier = UpdatedGuild.premium_tier;
+            if (UpdatedGuild.premium_subscription_count != null)
+                this.premium_subscription_count = UpdatedGuild.premium_subscription_count;
         }
     }
 }

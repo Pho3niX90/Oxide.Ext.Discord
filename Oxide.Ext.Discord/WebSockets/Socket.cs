@@ -12,6 +12,8 @@
 
         private SocketListner listner;
 
+        public bool hasConnectedOnce = false;
+
         public Socket(DiscordClient client)
         {
             this.client = client;
@@ -24,14 +26,18 @@
                 throw new NoURLException();
             }
 
-            if (socket != null && socket.ReadyState != WebSocketState.Closed)
+            if (socket != null && socket.ReadyState != WebSocketState.Closed && socket.ReadyState != WebSocketState.Closing)
             {
-                throw new SocketRunningException(client);
+                //throw new SocketRunningException(client);
+                // Assume force-reconenct
+                socket?.Close(CloseStatusCode.Abnormal);
             }
+            client.DestroyHeartbeat();
 
             socket = new WebSocket($"{url}/?v=6&encoding=json");
 
-            listner = new SocketListner(client, this);
+            if(listner == null)
+                listner = new SocketListner(client, this);
 
             socket.OnOpen += listner.SocketOpened;
             socket.OnClose += listner.SocketClosed;
@@ -41,19 +47,44 @@
             socket.ConnectAsync();
         }
 
-        public void Disconnect()
+        public void Disconnect(bool normal = true)
         {
-            if (IsClosed()) return;
+            if (IsClosed() || IsClosing()) return;
 
-            socket?.CloseAsync();
+            socket?.CloseAsync(normal ? CloseStatusCode.Normal : CloseStatusCode.Abnormal);
         }
 
-        public void Send(string message, Action<bool> completed = null) => socket?.SendAsync(message, completed);
+        public void Dispose()
+        {
+            listner = null;
+            socket = null;
+        }
 
-        public bool IsAlive() => socket?.IsAlive ?? false;
+        public void Send(string message, Action<bool> completed = null)
+        {
+            if (IsAlive())
+                socket?.SendAsync(message, completed);
+        }
 
-        public bool IsClosing() => socket?.ReadyState == WebSocketState.Closing;
+        public bool IsAlive()
+        {
+            if (socket == null)
+                return false;
+            return socket.ReadyState == WebSocketState.Open;
+        }
 
-        public bool IsClosed() => socket?.ReadyState == WebSocketState.Closed;
+        public bool IsClosing()
+        {
+            if (socket == null)
+                return false;
+            return socket.ReadyState == WebSocketState.Closing;
+        }
+
+        public bool IsClosed()
+        {
+            if (socket == null)
+                return true;
+            return socket.ReadyState == WebSocketState.Closed;
+        }
     }
 }

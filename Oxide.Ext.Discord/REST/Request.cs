@@ -9,6 +9,7 @@
     using Oxide.Core;
     using Oxide.Core.Libraries;
     using Oxide.Ext.Discord.DiscordObjects;
+    using Oxide.Ext.Discord.Helpers;
 
     public class Request
     {
@@ -37,6 +38,8 @@
         public bool InProgress { get; private set; } = false;
 
         private Bucket bucket;
+
+        private byte retries = 0;
 
         public Request(RequestMethod method, string route, string endpoint, Dictionary<string, string> headers, object data, Action<RestResponse> callback)
         {
@@ -85,21 +88,24 @@
 
                 if (httpResponse == null)
                 {
-                    Interface.Oxide.LogException($"[Discord Ext] A web request exception occured (internal error).", ex);
-                    Interface.Oxide.LogError($"[Discord Ext] Request URL: [{Method.ToString()}] {RequestURL}");
+                    Interface.Oxide.LogException($"[Discord Extension] A web request exception occured (internal error) [RETRY={retries}/3].", ex);
+                    Interface.Oxide.LogError($"[Discord Extension] Request URL: [{Method.ToString()}] {RequestURL}");
                     // Interface.Oxide.LogError($"[Discord Ext] Exception message: {ex.Message}");
 
-                    this.Close();
+                    this.Close(++retries >= 3);
+                    httpResponse.Close();
                     return;
                 }
 
                 string message = this.ParseResponse(ex.Response);
 
-                Interface.Oxide.LogWarning($"[Discord Ext] An error occured whilst submitting a request to {req.RequestUri} (code {httpResponse.StatusCode}): {message}");
-                
                 if ((int)httpResponse.StatusCode == 429)
                 {
-                    Interface.Oxide.LogWarning($"[Discord Ext] Ratelimit info: remaining: {bucket.Remaining}, limit: {bucket.Limit}, reset: {bucket.Reset}, time now: {Helpers.Time.TimeSinceEpoch()}");
+                    Interface.Oxide.LogInfo($"[Discord Extension] Discord ratelimit reached. (Ratelimit info: remaining: {bucket.Remaining}, limit: {bucket.Limit}, reset: {bucket.Reset}, time now: {Helpers.Time.TimeSinceEpoch()}");
+                }
+                else
+                {
+                    Interface.Oxide.LogWarning($"[Discord Extension] An error occured whilst submitting a request to {req.RequestUri} (code {httpResponse.StatusCode}): {message}");
                 }
 
                 httpResponse.Close();
@@ -111,6 +117,7 @@
             }
 
             this.ParseResponse(response);
+            response.Close();
 
             try
             {
@@ -118,7 +125,7 @@
             }
             catch (Exception ex)
             {
-                Interface.Oxide.LogException("[Discord Ext] Request callback raised an exception", ex);
+                Interface.Oxide.LogException("[Discord Extension] Request callback raised an exception", ex);
             }
             finally
             {
